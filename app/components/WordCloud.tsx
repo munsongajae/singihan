@@ -31,6 +31,7 @@ export default function WordCloud({ words, width = 800, height = 400 }: WordClou
       if (!canvasRef.current) return;
 
       // wordcloud 라이브러리 초기화 (default export 또는 named export 확인)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const wordcloud = (wordcloudModule as any).default || wordcloudModule;
       
       // Canvas 컨텍스트 확인
