@@ -179,10 +179,17 @@ export async function GET(request: NextRequest) {
 
     // 결과가 비어있으면 오류 반환 (디버깅 정보 포함)
     if (Object.keys(result).length === 0) {
+      const debugInfo = [
+        `URL: ${url}`,
+        `HTML 길이: ${html.length}`,
+        `컨테이너 요소 개수: ${articleListContainer.length}`,
+        `면 블록 개수: ${articleListContainer.find('div.newspaper_brick_item').length}`
+      ];
+      
       return NextResponse.json(
         { 
           error: '추출된 기사가 없습니다.',
-          debug: debugInfo.length > 0 ? debugInfo : undefined,
+          debug: debugInfo,
           url: url
         },
         { status: 404 }

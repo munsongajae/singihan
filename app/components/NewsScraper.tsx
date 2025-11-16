@@ -481,11 +481,23 @@ export default function NewsScraper() {
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem' }}>
       <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '0.5rem', color: '#1a1a1a' }}>
-          Naver 뉴스 스크레이퍼
+        <h1 style={{ 
+          fontSize: '2.5rem', 
+          fontWeight: 'bold', 
+          marginBottom: '0.5rem', 
+          color: '#1a1a1a',
+          lineHeight: '1.4',
+          display: 'inline-block'
+        }}>
+          <span style={{ fontSize: '2.5rem', fontWeight: 'bold' }}>신</span>
+          <span style={{ fontSize: '1.2rem', fontWeight: 'normal', color: '#666' }}>문 </span>
+          <span style={{ fontSize: '2.5rem', fontWeight: 'bold' }}>기</span>
+          <span style={{ fontSize: '1.2rem', fontWeight: 'normal', color: '#666' }}>사 </span>
+          <span style={{ fontSize: '2.5rem', fontWeight: 'bold' }}>한</span>
+          <span style={{ fontSize: '1.2rem', fontWeight: 'normal', color: '#666' }}>눈에 보기</span>
         </h1>
-        <p style={{ color: '#666', fontSize: '0.95rem' }}>
-          언론사 신문 기사를 면별로 추출합니다
+        <p style={{ color: '#666', fontSize: '0.95rem', lineHeight: '1.6', marginTop: '0.5rem' }}>
+          여러 언론사의 신문 기사를 면별로 모아보고, 키워드 분석과 트렌드를 한눈에 파악하세요
         </p>
       </div>
 
