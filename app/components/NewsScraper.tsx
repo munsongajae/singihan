@@ -10,6 +10,8 @@ const WordCloud = dynamic(() => import('./WordCloud'), { ssr: false });
 interface Article {
   title: string;
   link: string;
+  summary?: string;
+  matched?: boolean;
 }
 
 interface ScrapeResult {
@@ -21,6 +23,21 @@ interface Preset {
   name: string;
   pressIds: string[];
   createdAt: number;
+}
+
+interface NaverNewsItem {
+  title: string;
+  link: string;
+  originallink: string;
+  description: string;
+  pubDate: string;
+}
+
+interface NaverNewsSearchResult {
+  total: number;
+  start: number;
+  display: number;
+  items: NaverNewsItem[];
 }
 
 export default function NewsScraper() {
@@ -36,6 +53,22 @@ export default function NewsScraper() {
   const [presets, setPresets] = useState<Preset[]>([]);
   const [showPresetModal, setShowPresetModal] = useState(false);
   const [presetName, setPresetName] = useState('');
+  
+  // 네이버 뉴스 검색 관련 state
+  const [newsKeyword, setNewsKeyword] = useState('');
+  const [newsSearchLoading, setNewsSearchLoading] = useState(false);
+  const [newsSearchResult, setNewsSearchResult] = useState<NaverNewsSearchResult | null>(null);
+  const [newsSearchError, setNewsSearchError] = useState<string | null>(null);
+  const [showNewsSearch, setShowNewsSearch] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [displayCount] = useState(10); // 한 페이지에 표시할 결과 수
+  
+  // 요약문 추출 관련 state
+  const [summaryExtracting, setSummaryExtracting] = useState(false);
+  const [summaryExtractError, setSummaryExtractError] = useState<string | null>(null);
+  
+  // 탭 상태
+  const [activeTab, setActiveTab] = useState<'scrape' | 'search'>('scrape');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -157,6 +190,159 @@ export default function NewsScraper() {
       setError(err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 네이버 뉴스 검색 핸들러 (페이지 번호 포함)
+  const handleNewsSearch = async (page: number = 1) => {
+    if (!newsKeyword.trim()) {
+      setNewsSearchError('검색어를 입력해주세요.');
+      return;
+    }
+
+    setNewsSearchLoading(true);
+    setNewsSearchError(null);
+    setCurrentPage(page);
+
+    try {
+      const start = (page - 1) * displayCount + 1;
+      const params = new URLSearchParams({
+        query: newsKeyword.trim(),
+        display: displayCount.toString(),
+        start: start.toString(),
+        sort: 'sim'
+      });
+
+      const response = await fetch(`/api/search-news?${params.toString()}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || '뉴스 검색에 실패했습니다.');
+      }
+
+      setNewsSearchResult(data);
+    } catch (err) {
+      setNewsSearchError(err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.');
+    } finally {
+      setNewsSearchLoading(false);
+    }
+  };
+
+  // 검색 폼 제출 핸들러
+  const handleNewsSearchSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setShowNewsSearch(true);
+    await handleNewsSearch(1);
+  };
+
+  // 페이지 변경 핸들러
+  const handlePageChange = async (newPage: number) => {
+    if (newPage < 1) return;
+    if (newsSearchResult && newPage > Math.ceil(newsSearchResult.total / displayCount)) return;
+    await handleNewsSearch(newPage);
+    // 페이지 상단으로 스크롤
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // 요약문 추출 핸들러
+  const handleExtractSummaries = async () => {
+    if (!result) {
+      setSummaryExtractError('먼저 기사를 추출해주세요.');
+      return;
+    }
+
+    // 모든 기사 수집
+    const allArticles: Article[] = [];
+    for (const pressResult of Object.values(result)) {
+      for (const articles of Object.values(pressResult)) {
+        allArticles.push(...articles);
+      }
+    }
+
+    if (allArticles.length === 0) {
+      setSummaryExtractError('추출된 기사가 없습니다.');
+      return;
+    }
+
+    // 이미 요약문이 있는 기사는 제외 (선택사항)
+    const articlesToProcess = allArticles.filter(article => !article.summary);
+
+    if (articlesToProcess.length === 0) {
+      alert('모든 기사에 이미 요약문이 있습니다.');
+      return;
+    }
+
+    const confirmMessage = `총 ${allArticles.length}개의 기사 중 ${articlesToProcess.length}개의 기사에 요약문을 추가하시겠습니까?\n\n주의: API 호출 제한을 피하기 위해 처리에 시간이 걸릴 수 있습니다.`;
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    setSummaryExtracting(true);
+    setSummaryExtractError(null);
+
+    try {
+      const response = await fetch('/api/extract-summaries', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          articles: articlesToProcess,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || '요약문 추출에 실패했습니다.');
+      }
+
+      // 결과를 기존 result에 병합
+      const updatedResult: Record<string, ScrapeResult> = { ...result };
+      const summaryMap = new Map<string, Article>();
+
+      // 요약문이 추가된 기사들을 맵에 저장
+      data.articles.forEach((article: Article) => {
+        if (article.summary) {
+          summaryMap.set(`${article.title}|${article.link}`, article);
+        }
+      });
+
+      // 기존 result를 순회하며 요약문 추가
+      for (const [pressId, pressResult] of Object.entries(updatedResult)) {
+        const updatedPressResult: ScrapeResult = {};
+        for (const [page, articles] of Object.entries(pressResult)) {
+          updatedPressResult[page] = articles.map(article => {
+            const key = `${article.title}|${article.link}`;
+            const articleWithSummary = summaryMap.get(key);
+            if (articleWithSummary && articleWithSummary.summary) {
+              return {
+                ...article,
+                summary: articleWithSummary.summary,
+                matched: articleWithSummary.matched,
+              };
+            }
+            return article;
+          });
+        }
+        updatedResult[pressId] = updatedPressResult;
+      }
+
+      setResult(updatedResult);
+
+      // 통계 정보 표시
+      const stats = data.statistics;
+      alert(
+        `요약문 추출 완료!\n\n` +
+        `총 기사: ${stats.total}개\n` +
+        `매칭 성공: ${stats.matched}개\n` +
+        `매칭 실패: ${stats.unmatched}개\n` +
+        `매칭률: ${stats.matchRate}%`
+      );
+    } catch (err) {
+      setSummaryExtractError(err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.');
+    } finally {
+      setSummaryExtracting(false);
     }
   };
 
@@ -501,7 +687,57 @@ export default function NewsScraper() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} style={{ marginBottom: '2rem' }}>
+      {/* 탭 네비게이션 */}
+      <div style={{
+        marginBottom: '1.5rem',
+        borderBottom: '2px solid #e0e0e0'
+      }}>
+        <div style={{
+          display: 'flex',
+          gap: '0.5rem'
+        }}>
+          <button
+            type="button"
+            onClick={() => setActiveTab('scrape')}
+            style={{
+              padding: '0.75rem 1.5rem',
+              backgroundColor: activeTab === 'scrape' ? '#007bff' : 'transparent',
+              color: activeTab === 'scrape' ? '#fff' : '#666',
+              border: 'none',
+              borderBottom: activeTab === 'scrape' ? '3px solid #007bff' : '3px solid transparent',
+              cursor: 'pointer',
+              fontSize: '1rem',
+              fontWeight: activeTab === 'scrape' ? '600' : '500',
+              transition: 'all 0.2s',
+              marginBottom: '-2px'
+            }}
+          >
+            📰 신문 기사 추출
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('search')}
+            style={{
+              padding: '0.75rem 1.5rem',
+              backgroundColor: activeTab === 'search' ? '#007bff' : 'transparent',
+              color: activeTab === 'search' ? '#fff' : '#666',
+              border: 'none',
+              borderBottom: activeTab === 'search' ? '3px solid #007bff' : '3px solid transparent',
+              cursor: 'pointer',
+              fontSize: '1rem',
+              fontWeight: activeTab === 'search' ? '600' : '500',
+              transition: 'all 0.2s',
+              marginBottom: '-2px'
+            }}
+          >
+            🔍 네이버 뉴스 검색
+          </button>
+        </div>
+      </div>
+
+      {/* 신문 기사 추출 탭 */}
+      {activeTab === 'scrape' && (
+        <form onSubmit={handleSubmit} style={{ marginBottom: '2rem' }}>
         {/* 언론사 선택 영역 */}
         <div style={{ marginBottom: '1.5rem' }}>
             <div style={{
@@ -910,8 +1146,328 @@ export default function NewsScraper() {
           </div>
         </div>
       </form>
+      )}
 
-      {error && (
+      {/* 네이버 뉴스 검색 탭 */}
+      {activeTab === 'search' && (
+        <div style={{ 
+          padding: '1.5rem', 
+          backgroundColor: '#f8f9fa', 
+          borderRadius: '8px',
+          border: '1px solid #e0e0e0'
+        }}>
+          <h2 style={{ 
+            fontSize: '1.25rem', 
+            fontWeight: '600', 
+            color: '#333',
+            marginBottom: '1.5rem'
+          }}>
+            🔍 네이버 뉴스 키워드 검색
+          </h2>
+
+          <form onSubmit={handleNewsSearchSubmit} style={{ marginBottom: '1rem' }}>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <input
+                type="text"
+                value={newsKeyword}
+                onChange={(e) => setNewsKeyword(e.target.value)}
+                placeholder="검색할 키워드를 입력하세요 (예: 인공지능, 경제, 정치 등)"
+                style={{
+                  flex: 1,
+                  padding: '0.75rem',
+                  border: '1px solid #ddd',
+                  borderRadius: '6px',
+                  fontSize: '1rem'
+                }}
+                disabled={newsSearchLoading}
+              />
+              <button
+                type="submit"
+                disabled={newsSearchLoading || !newsKeyword.trim()}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  backgroundColor: newsSearchLoading || !newsKeyword.trim() ? '#ccc' : '#007bff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: newsSearchLoading || !newsKeyword.trim() ? 'not-allowed' : 'pointer',
+                  fontSize: '1rem',
+                  fontWeight: '500',
+                  color: '#fff',
+                  transition: 'all 0.2s'
+                }}
+              >
+                {newsSearchLoading ? '검색 중...' : '검색'}
+              </button>
+            </div>
+          </form>
+
+          {newsSearchError && (
+            <div style={{
+              padding: '1rem',
+              backgroundColor: '#fff3cd',
+              border: '1px solid #ffc107',
+              borderRadius: '6px',
+              color: '#856404',
+              marginBottom: '1rem'
+            }}>
+              ⚠️ {newsSearchError}
+            </div>
+          )}
+
+          {newsSearchResult && (
+            <div>
+              <div style={{ 
+                marginBottom: '1rem', 
+                color: '#666',
+                fontSize: '0.9rem'
+              }}>
+                총 {newsSearchResult.total.toLocaleString()}개의 검색 결과 중 {newsSearchResult.start}~{Math.min(newsSearchResult.start + newsSearchResult.display - 1, newsSearchResult.total)}번째 결과
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {newsSearchResult.items.map((item, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      padding: '1rem',
+                      backgroundColor: '#fff',
+                      border: '1px solid #e0e0e0',
+                      borderRadius: '6px',
+                      transition: 'all 0.2s',
+                      cursor: 'pointer'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = '#007bff';
+                      e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,123,255,0.1)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = '#e0e0e0';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }}
+                    onClick={() => window.open(item.link, '_blank')}
+                  >
+                    <h3 style={{
+                      fontSize: '1.1rem',
+                      fontWeight: '600',
+                      color: '#333',
+                      marginBottom: '0.5rem',
+                      marginTop: 0
+                    }}>
+                      {item.title}
+                    </h3>
+                    <p style={{
+                      fontSize: '0.9rem',
+                      color: '#666',
+                      marginBottom: '0.5rem',
+                      lineHeight: '1.5'
+                    }}>
+                      {item.description}
+                    </p>
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      fontSize: '0.85rem',
+                      color: '#999'
+                    }}>
+                      <span>{new Date(item.pubDate).toLocaleString('ko-KR')}</span>
+                      <a
+                        href={item.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                          color: '#007bff',
+                          textDecoration: 'none'
+                        }}
+                      >
+                        원문 보기 →
+                      </a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* 페이징 UI */}
+              {newsSearchResult && newsSearchResult.total > 0 && (
+                <div style={{
+                  marginTop: '2rem',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  flexWrap: 'wrap'
+                }}>
+                  <button
+                    type="button"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1 || newsSearchLoading}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      backgroundColor: currentPage === 1 || newsSearchLoading ? '#e0e0e0' : '#007bff',
+                      color: currentPage === 1 || newsSearchLoading ? '#999' : '#fff',
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: currentPage === 1 || newsSearchLoading ? 'not-allowed' : 'pointer',
+                      fontSize: '0.9rem',
+                      fontWeight: '500',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    ◀ 이전
+                  </button>
+
+                  {/* 페이지 번호 표시 */}
+                  <div style={{
+                    display: 'flex',
+                    gap: '0.25rem',
+                    alignItems: 'center'
+                  }}>
+                    {(() => {
+                      const totalPages = Math.ceil(newsSearchResult.total / displayCount);
+                      const maxPages = 10; // 최대 표시할 페이지 번호 수
+                      const pages: (number | string)[] = [];
+                      
+                      if (totalPages <= maxPages) {
+                        // 전체 페이지가 적으면 모두 표시
+                        for (let i = 1; i <= totalPages; i++) {
+                          pages.push(i);
+                        }
+                      } else {
+                        // 현재 페이지 기준으로 앞뒤 페이지 표시
+                        const startPage = Math.max(1, currentPage - 4);
+                        const endPage = Math.min(totalPages, currentPage + 5);
+                        
+                        if (startPage > 1) {
+                          pages.push(1);
+                          if (startPage > 2) pages.push('...');
+                        }
+                        
+                        for (let i = startPage; i <= endPage; i++) {
+                          pages.push(i);
+                        }
+                        
+                        if (endPage < totalPages) {
+                          if (endPage < totalPages - 1) pages.push('...');
+                          pages.push(totalPages);
+                        }
+                      }
+
+                      return pages.map((page, index) => {
+                        if (page === '...') {
+                          return (
+                            <span key={`ellipsis-${index}`} style={{ padding: '0 0.5rem', color: '#999' }}>
+                              ...
+                            </span>
+                          );
+                        }
+                        
+                        const pageNum = page as number;
+                        const isActive = pageNum === currentPage;
+                        
+                        return (
+                          <button
+                            key={pageNum}
+                            type="button"
+                            onClick={() => handlePageChange(pageNum)}
+                            disabled={newsSearchLoading}
+                            style={{
+                              padding: '0.5rem 0.75rem',
+                              minWidth: '2.5rem',
+                              backgroundColor: isActive ? '#007bff' : '#fff',
+                              color: isActive ? '#fff' : '#333',
+                              border: `1px solid ${isActive ? '#007bff' : '#ddd'}`,
+                              borderRadius: '6px',
+                              cursor: newsSearchLoading ? 'not-allowed' : 'pointer',
+                              fontSize: '0.9rem',
+                              fontWeight: isActive ? '600' : '500',
+                              transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={(e) => {
+                              if (!newsSearchLoading && !isActive) {
+                                e.currentTarget.style.backgroundColor = '#f0f0f0';
+                                e.currentTarget.style.borderColor = '#007bff';
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (!newsSearchLoading && !isActive) {
+                                e.currentTarget.style.backgroundColor = '#fff';
+                                e.currentTarget.style.borderColor = '#ddd';
+                              }
+                            }}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      });
+                    })()}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={
+                      !newsSearchResult || 
+                      currentPage >= Math.ceil(newsSearchResult.total / displayCount) || 
+                      newsSearchLoading
+                    }
+                    style={{
+                      padding: '0.5rem 1rem',
+                      backgroundColor: (
+                        !newsSearchResult || 
+                        currentPage >= Math.ceil(newsSearchResult.total / displayCount) || 
+                        newsSearchLoading
+                      ) ? '#e0e0e0' : '#007bff',
+                      color: (
+                        !newsSearchResult || 
+                        currentPage >= Math.ceil(newsSearchResult.total / displayCount) || 
+                        newsSearchLoading
+                      ) ? '#999' : '#fff',
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: (
+                        !newsSearchResult || 
+                        currentPage >= Math.ceil(newsSearchResult.total / displayCount) || 
+                        newsSearchLoading
+                      ) ? 'not-allowed' : 'pointer',
+                      fontSize: '0.9rem',
+                      fontWeight: '500',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    다음 ▶
+                  </button>
+                </div>
+              )}
+
+              {/* 페이지 정보 */}
+              {newsSearchResult && newsSearchResult.total > 0 && (
+                <div style={{
+                  marginTop: '1rem',
+                  textAlign: 'center',
+                  color: '#666',
+                  fontSize: '0.85rem'
+                }}>
+                  페이지 {currentPage} / {Math.ceil(newsSearchResult.total / displayCount)} 
+                  ({newsSearchResult.total.toLocaleString()}개 결과 중)
+                </div>
+              )}
+            </div>
+          )}
+
+          {!newsSearchResult && !newsSearchLoading && (
+            <div style={{
+              padding: '2rem',
+              textAlign: 'center',
+              color: '#999',
+              fontSize: '0.95rem'
+            }}>
+              검색어를 입력하고 검색 버튼을 클릭하세요
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'scrape' && error && (
         <div style={{
           padding: '1rem',
           backgroundColor: '#fee',
@@ -935,7 +1491,7 @@ export default function NewsScraper() {
         </div>
       )}
 
-      {result && (
+      {activeTab === 'scrape' && result && (
         <div style={{ marginTop: '2rem' }}>
           <div style={{
             display: 'flex',
@@ -959,6 +1515,34 @@ export default function NewsScraper() {
               gap: '0.5rem',
               flexWrap: 'wrap'
             }}>
+              <button
+                type="button"
+                onClick={handleExtractSummaries}
+                disabled={summaryExtracting}
+                style={{
+                  padding: '0.5rem 1rem',
+                  backgroundColor: summaryExtracting ? '#ccc' : '#17a2b8',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: summaryExtracting ? 'not-allowed' : 'pointer',
+                  fontSize: '0.9rem',
+                  fontWeight: '500',
+                  color: '#fff',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  if (!summaryExtracting) {
+                    e.currentTarget.style.backgroundColor = '#138496';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!summaryExtracting) {
+                    e.currentTarget.style.backgroundColor = '#17a2b8';
+                  }
+                }}
+              >
+                {summaryExtracting ? '⏳ 요약문 추출 중...' : '📝 요약문 추출'}
+              </button>
               <button
                 type="button"
                 onClick={copyToClipboard}
@@ -1055,6 +1639,20 @@ export default function NewsScraper() {
               )}
             </div>
           </div>
+
+          {/* 요약문 추출 에러 표시 */}
+          {summaryExtractError && (
+            <div style={{
+              padding: '1rem',
+              backgroundColor: '#fff3cd',
+              border: '1px solid #ffc107',
+              borderRadius: '6px',
+              color: '#856404',
+              marginBottom: '1rem'
+            }}>
+              ⚠️ {summaryExtractError}
+            </div>
+          )}
 
           {/* 기사 검색 필터 */}
           <div style={{
@@ -1260,6 +1858,28 @@ export default function NewsScraper() {
                                 >
                                   {highlightText(article.title, articleSearchTerm)}
                                 </a>
+                                {article.summary && (
+                                  <div style={{
+                                    marginTop: '0.75rem',
+                                    padding: '0.75rem',
+                                    backgroundColor: '#f8f9fa',
+                                    borderRadius: '6px',
+                                    fontSize: '0.9rem',
+                                    color: '#555',
+                                    lineHeight: '1.5',
+                                    borderLeft: '3px solid #17a2b8'
+                                  }}>
+                                    <div style={{
+                                      fontSize: '0.8rem',
+                                      fontWeight: '600',
+                                      color: '#17a2b8',
+                                      marginBottom: '0.25rem'
+                                    }}>
+                                      📄 요약
+                                    </div>
+                                    {article.summary}
+                                  </div>
+                                )}
                                 <div style={{ 
                                   marginTop: '0.5rem', 
                                   fontSize: '0.85rem', 
@@ -1289,7 +1909,7 @@ export default function NewsScraper() {
         </div>
       )}
 
-      {!result && !error && !loading && (
+      {activeTab === 'scrape' && !result && !error && !loading && (
         <div style={{
           padding: '3rem',
           textAlign: 'center',
