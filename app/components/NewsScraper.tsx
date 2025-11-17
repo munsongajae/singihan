@@ -40,6 +40,135 @@ interface NaverNewsSearchResult {
   items: NaverNewsItem[];
 }
 
+// 도메인을 언론사 이름으로 변환하는 매핑
+const domainToPressName: Record<string, string> = {
+  'chosun.com': '조선일보',
+  'joongang.co.kr': '중앙일보',
+  'donga.com': '동아일보',
+  'hani.co.kr': '한겨레',
+  'khan.co.kr': '경향신문',
+  'mk.co.kr': '매일경제',
+  'hankookilbo.com': '한국일보',
+  'seoul.co.kr': '서울신문',
+  'munhwa.com': '문화일보',
+  'segye.com': '세계일보',
+  'kukinews.com': '국민일보',
+  'yna.co.kr': '연합뉴스',
+  'news1.kr': '뉴스1',
+  'newsis.com': '뉴시스',
+  'kbs.co.kr': 'KBS',
+  'imbc.com': 'MBC',
+  'sbs.co.kr': 'SBS',
+  'ytn.co.kr': 'YTN',
+  'jtbc.co.kr': 'JTBC',
+  'chosunbiz.com': '조선비즈',
+  'edaily.co.kr': '이데일리',
+  'asiatoday.co.kr': '아시아경제',
+  'seouleconews.com': '서울경제',
+  'fnnews.com': '파이낸셜뉴스',
+  'heraldcorp.com': '헤럴드경제',
+  'dt.co.kr': '디지털타임스',
+  'etnews.com': '전자신문',
+  'ohmynews.com': '오마이뉴스',
+  'pressian.com': '프레시안',
+  'nocutnews.co.kr': '노컷뉴스',
+  'dailian.co.kr': '데일리안',
+  'inews24.com': '아이뉴스24',
+  'mediatoday.co.kr': '미디어오늘',
+  'busan.com': '부산일보',
+  'kookje.co.kr': '국제신문',
+  'jeonmae.co.kr': '전매일보',
+  'kwnews.co.kr': '강원일보',
+  'jejuilbo.net': '제주일보',
+  'cbs.co.kr': 'CBS',
+  'tbs.seoul.kr': 'TBS',
+  'tvn.co.kr': 'tvN',
+  'channela.co.kr': '채널A',
+  'chosuntv.com': 'TV조선',
+  'mbn.co.kr': 'MBN',
+  'sbsbiz.co.kr': 'SBS Biz',
+  'bloter.net': '블로터',
+  'zdnet.co.kr': '지디넷코리아',
+  'ddaily.co.kr': '디지털데일리',
+  'thefact.co.kr': '더팩트',
+  'koreatimes.com': '코리아타임스',
+  'koreaherald.com': '코리아헤럴드',
+  'koreajoongangdaily.com': '코리아중앙데일리',
+  'news.naver.com': '네이버 뉴스',
+  'n.news.naver.com': '네이버 뉴스',
+  'hankyung.com': '한국경제',
+  'mt.co.kr': '머니투데이',
+  'etoday.co.kr': '이투데이',
+  'newstomato.com': '뉴스토마토',
+  'sisain.co.kr': '시사IN',
+  'womennews.co.kr': '여성신문',
+  'betanews.net': '베타뉴스',
+  'polinews.co.kr': '폴리뉴스',
+  'ajunews.com': '아주경제',
+  'newspim.com': '뉴스핌',
+  'upkorea.net': '업코리아',
+  'newstapa.org': '뉴스타파',
+  'consumergyeongje.com': '소비자경제신문',
+  'seoulwire.com': '서울와이어',
+  'womandonga.com': '여성동아',
+  'sisajournal.com': '시사저널',
+  'sports.chosun.com': '스포츠조선',
+  'sportsseoul.com': '스포츠서울',
+  'sports.donga.com': '스포츠동아',
+  'isplus.com': '일간스포츠',
+  'knnews.co.kr': '경남신문',
+  'usnews.co.kr': '울산신문',
+  'daejonilbo.com': '대전일보',
+  'imsnews.com': '매일신문',
+  'mdilbo.com': '무등일보',
+  'yeongnam.com': '영남일보',
+  'kbin.co.kr': '경북일보',
+  'incheonilbo.com': '인천일보',
+  'osen.co.kr': 'OSEN',
+  'mydaily.co.kr': '마이데일리',
+  'xportsnews.com': '엑스포츠뉴스',
+  'gbnews.co.kr': '골든브릿지뉴스',
+  'ybs.co.kr': 'YBS 연합뉴스방송',
+  // 추가 언론사 도메인 매핑 (누락된 것만 추가)
+  'yonhapnews.co.kr': '연합뉴스',
+  'yonhapnewstv.co.kr': '연합뉴스TV',
+  'channel-a.co.kr': '채널A',
+  'hdtv.co.kr': '한국경제TV',
+  'bizwatch.co.kr': '비즈워치',
+  'sedaily.com': '서울경제',
+  'moneys.mt.co.kr': '머니S',
+  'thescoop.co.kr': '더스쿠프',
+  'lady.khan.co.kr': '레이디경향',
+  'sisapress.com': '시사저널',
+  'san.chosun.com': '월간 산',
+  'economist.co.kr': '이코노미스트',
+  'weekly.khan.co.kr': '주간경향',
+  'weekly.donga.com': '주간동아',
+  'weekly.chosun.com': '주간조선',
+  'sunday.joongang.co.kr': '중앙SUNDAY',
+  'h21.hani.co.kr': '한겨레21',
+  'magazine.hankyung.com': '한경비즈니스',
+  'journalist.or.kr': '기자협회보',
+  'nongmin.com': '농민신문',
+  'dongscience.com': '동아사이언스',
+  'ildaro.com': '일다',
+  'kormedi.com': '코메디닷컴',
+  'health.chosun.com': '헬스조선',
+  'gangwonilbo.com': '강원도민일보',
+  'kgnews.co.kr': '경기일보',
+  'mudeung.com': '무등일보',
+  'jibs.co.kr': 'JIBS',
+  'kbc.co.kr': 'kbc광주방송',
+  'cjb.co.kr': 'CJB청주방송',
+  'jeonjumbc.co.kr': '전주MBC',
+  'daegumbc.co.kr': '대구MBC',
+};
+
+// 도메인을 언론사 이름으로 변환하는 함수
+const getPressNameFromDomain = (domain: string): string => {
+  return domainToPressName[domain] || domain;
+};
+
 export default function NewsScraper() {
   const [selectedPresses, setSelectedPresses] = useState<PressInfo[]>([]);
   const [date, setDate] = useState(''); // YYYY-MM-DD 형식으로 저장
@@ -678,12 +807,12 @@ export default function NewsScraper() {
 
     // 2. 언론사 필터 (도메인)
     if (filterDomain.trim()) {
-      const domainLower = filterDomain.trim().toLowerCase();
+      const filterDomainLower = filterDomain.trim().toLowerCase();
       filteredItems = filteredItems.filter((item) => {
         try {
           const url = new URL(item.originallink || item.link);
           const domain = url.hostname.replace('www.', '').toLowerCase();
-          return domain.includes(domainLower);
+          return domain === filterDomainLower;
         } catch (e) {
           return false;
         }
@@ -971,6 +1100,28 @@ export default function NewsScraper() {
       console.error('클립보드 복사 실패:', err);
       alert('클립보드 복사에 실패했습니다.');
     }
+  };
+
+  // 뉴스 키워드 검색 탭 전체 초기화
+  const handleResetNewsSearch = () => {
+    setNewsKeyword('');
+    setNewsSearchResult(null);
+    setNewsSearchError(null);
+    setCurrentPage(1);
+    setDisplayCount(10);
+    setSortOption('date');
+    setDateRangeStart('');
+    setDateRangeEnd('');
+    setUseDateRange(false);
+    setFilterDomain('');
+    setFilterText('');
+    setFilterInTitle(true);
+    setFilterInDescription(true);
+    setShowFilters(false);
+    setShowTrend(false);
+    setShowSummary(false);
+    setShowSaveCompare(false);
+    setShowAutocomplete(false);
   };
 
   // 요약문 추출 핸들러
@@ -2129,14 +2280,49 @@ export default function NewsScraper() {
           borderRadius: '8px',
           border: '1px solid #e0e0e0'
         }}>
-          <h2 style={{ 
-            fontSize: '1.25rem', 
-            fontWeight: '600', 
-            color: '#333',
-            marginBottom: '1.5rem'
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '1.5rem',
+            flexWrap: 'wrap',
+            gap: '1rem'
           }}>
-            🔍 뉴스 키워드 검색
-          </h2>
+            <h2 style={{ 
+              fontSize: '1.25rem', 
+              fontWeight: '600', 
+              color: '#333',
+              margin: 0
+            }}>
+              🔍 뉴스 키워드 검색
+            </h2>
+            <button
+              type="button"
+              onClick={handleResetNewsSearch}
+              style={{
+                padding: '0.5rem 1rem',
+                backgroundColor: '#dc3545',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '0.9rem',
+                fontWeight: '500',
+                transition: 'all 0.2s',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#c82333';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#dc3545';
+              }}
+            >
+              🔄 전체 초기화
+            </button>
+          </div>
 
           <form onSubmit={handleNewsSearchSubmit} style={{ marginBottom: '1rem' }}>
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
@@ -2656,7 +2842,7 @@ export default function NewsScraper() {
             )}
           </div>
 
-          {/* 검색 결과 필터링 */}
+          {/* 기능 버튼 모음 */}
           {newsSearchResult && (
             <div style={{
               marginBottom: '1rem',
@@ -2667,38 +2853,149 @@ export default function NewsScraper() {
             }}>
               <div style={{
                 display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: showFilters ? '0.75rem' : '0',
-                cursor: 'pointer'
-              }}
-              onClick={() => setShowFilters(!showFilters)}
-              >
-                <div style={{
-                  fontSize: '0.9rem',
-                  fontWeight: '600',
-                  color: '#333',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}>
-                  🔍 결과 필터링
+                gap: '0.5rem',
+                flexWrap: 'wrap',
+                marginBottom: (showFilters || showSaveCompare || showTrend || showSummary) ? '1rem' : '0'
+              }}>
+                <button
+                  type="button"
+                  onClick={() => setShowFilters(!showFilters)}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    backgroundColor: showFilters ? '#007bff' : '#f8f9fa',
+                    color: showFilters ? '#fff' : '#333',
+                    border: showFilters ? 'none' : '1px solid #ddd',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '0.85rem',
+                    fontWeight: '500',
+                    transition: 'all 0.2s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!showFilters) {
+                      e.currentTarget.style.backgroundColor = '#e9ecef';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!showFilters) {
+                      e.currentTarget.style.backgroundColor = '#f8f9fa';
+                    }
+                  }}
+                >
+                  🔍 결과 내 재검색
                   {(filterDomain || filterText) && (
                     <span style={{
-                      padding: '0.2rem 0.5rem',
-                      backgroundColor: '#007bff',
-                      color: '#fff',
-                      borderRadius: '12px',
-                      fontSize: '0.7rem'
+                      padding: '0.15rem 0.4rem',
+                      backgroundColor: showFilters ? 'rgba(255,255,255,0.3)' : '#007bff',
+                      color: showFilters ? '#fff' : '#fff',
+                      borderRadius: '10px',
+                      fontSize: '0.65rem'
                     }}>
                       활성
                     </span>
                   )}
-                </div>
-                <span style={{ fontSize: '0.8rem', color: '#666' }}>
-                  {showFilters ? '▲' : '▼'}
-                </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowSaveCompare(!showSaveCompare)}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    backgroundColor: showSaveCompare ? '#28a745' : '#f8f9fa',
+                    color: showSaveCompare ? '#fff' : '#333',
+                    border: showSaveCompare ? 'none' : '1px solid #ddd',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '0.85rem',
+                    fontWeight: '500',
+                    transition: 'all 0.2s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!showSaveCompare) {
+                      e.currentTarget.style.backgroundColor = '#e9ecef';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!showSaveCompare) {
+                      e.currentTarget.style.backgroundColor = '#f8f9fa';
+                    }
+                  }}
+                >
+                  💾 저장 및 비교
+                  {savedSearchResults.length > 0 && (
+                    <span style={{
+                      padding: '0.15rem 0.4rem',
+                      backgroundColor: showSaveCompare ? 'rgba(255,255,255,0.3)' : '#28a745',
+                      color: '#fff',
+                      borderRadius: '10px',
+                      fontSize: '0.65rem'
+                    }}>
+                      {savedSearchResults.length}
+                    </span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowTrend(!showTrend)}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    backgroundColor: showTrend ? '#17a2b8' : '#f8f9fa',
+                    color: showTrend ? '#fff' : '#333',
+                    border: showTrend ? 'none' : '1px solid #ddd',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '0.85rem',
+                    fontWeight: '500',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!showTrend) {
+                      e.currentTarget.style.backgroundColor = '#e9ecef';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!showTrend) {
+                      e.currentTarget.style.backgroundColor = '#f8f9fa';
+                    }
+                  }}
+                >
+                  📈 트렌드 분석
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowSummary(!showSummary)}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    backgroundColor: showSummary ? '#6c757d' : '#f8f9fa',
+                    color: showSummary ? '#fff' : '#333',
+                    border: showSummary ? 'none' : '1px solid #ddd',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '0.85rem',
+                    fontWeight: '500',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!showSummary) {
+                      e.currentTarget.style.backgroundColor = '#e9ecef';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!showSummary) {
+                      e.currentTarget.style.backgroundColor = '#f8f9fa';
+                    }
+                  }}
+                >
+                  📊 결과 요약
+                </button>
               </div>
+
+              {/* 결과 내 재검색 섹션 */}
               {showFilters && (
               <div style={{
                 display: 'flex',
@@ -2714,21 +3011,55 @@ export default function NewsScraper() {
                     color: '#666',
                     fontWeight: '500'
                   }}>
-                    언론사 (도메인)
+                    언론사
                   </label>
-                  <input
-                    type="text"
-                    value={filterDomain}
-                    onChange={(e) => setFilterDomain(e.target.value)}
-                    placeholder="예: chosun.com, joongang.co.kr"
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem',
-                      border: '1px solid #ddd',
-                      borderRadius: '4px',
-                      fontSize: '0.9rem'
-                    }}
-                  />
+                  {(() => {
+                    // 검색 결과에서 고유한 도메인 추출
+                    const uniqueDomains = new Set<string>();
+                    if (newsSearchResult) {
+                      newsSearchResult.items.forEach((item) => {
+                        try {
+                          const url = new URL(item.originallink || item.link);
+                          const domain = url.hostname.replace('www.', '');
+                          uniqueDomains.add(domain);
+                        } catch (e) {
+                          // URL 파싱 실패 시 무시
+                        }
+                      });
+                    }
+                    const domainList = Array.from(uniqueDomains).sort((a, b) => {
+                      // 언론사 이름으로 정렬
+                      const nameA = getPressNameFromDomain(a);
+                      const nameB = getPressNameFromDomain(b);
+                      return nameA.localeCompare(nameB, 'ko');
+                    });
+                    
+                    return (
+                      <select
+                        value={filterDomain}
+                        onChange={(e) => setFilterDomain(e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '0.5rem',
+                          border: '1px solid #ddd',
+                          borderRadius: '4px',
+                          fontSize: '0.9rem',
+                          backgroundColor: '#fff',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <option value="">전체 언론사</option>
+                        {domainList.map((domain) => {
+                          const pressName = getPressNameFromDomain(domain);
+                          return (
+                            <option key={domain} value={domain}>
+                              {pressName}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    );
+                  })()}
                 </div>
 
                 {/* 제목/본문 필터 */}
@@ -2792,7 +3123,7 @@ export default function NewsScraper() {
                   </div>
                 </div>
 
-                {/* 필터 초기화 */}
+                {/* 재검색 초기화 */}
                 {(filterDomain || filterText) && (
                   <button
                     type="button"
@@ -2817,164 +3148,77 @@ export default function NewsScraper() {
                       e.currentTarget.style.backgroundColor = '#fff';
                     }}
                   >
-                    필터 초기화
+                    재검색 초기화
                   </button>
                 )}
                 </div>
               )}
-            </div>
-          )}
 
-          {newsSearchError && (
-            <div style={{
-              padding: '1rem',
-              backgroundColor: '#fff3cd',
-              border: '1px solid #ffc107',
-              borderRadius: '6px',
-              color: '#856404',
-              marginBottom: '1rem'
-            }}>
-              ⚠️ {newsSearchError}
-            </div>
-          )}
-
-          {newsSearchResult && (() => {
-            const filteredResult = getFilteredNewsResults();
-            const displayResult = filteredResult || newsSearchResult;
-            const isFiltered = useDateRange && (dateRangeStart || dateRangeEnd);
-            const summary = generateSearchSummary();
-            
-            return (
-              <div>
-                <div style={{ 
-                  marginBottom: '1rem', 
-                  color: '#666',
-                  fontSize: '0.9rem',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '0.25rem'
-                }}>
-                  <div>
-                    총 {newsSearchResult.total.toLocaleString()}개의 검색 결과 중 {newsSearchResult.start}~{Math.min(newsSearchResult.start + newsSearchResult.display - 1, newsSearchResult.total)}번째 결과
-                  </div>
-                  {isFiltered && filteredResult && (
-                    <div style={{
-                      padding: '0.5rem',
-                      backgroundColor: '#e6f2ff',
-                      borderRadius: '4px',
-                      color: '#0066cc',
-                      fontSize: '0.85rem'
-                    }}>
-                      📅 날짜 범위 필터 적용: {displayResult.items.length}개 결과 표시
-                      {dateRangeStart && dateRangeEnd && (
-                        <span> ({dateRangeStart} ~ {dateRangeEnd})</span>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {/* 검색 결과 저장 및 비교 */}
+              {/* 검색 결과 저장 및 비교 섹션 */}
+              {showSaveCompare && (
                 <div style={{
-                  marginBottom: '1.5rem',
+                  marginTop: '1rem',
                   padding: '1rem',
                   backgroundColor: '#f8f9fa',
                   borderRadius: '6px',
                   border: '1px solid #e0e0e0'
                 }}>
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: showSaveCompare ? '0.75rem' : '0',
-                    flexWrap: 'wrap',
-                    gap: '0.5rem',
-                    cursor: 'pointer'
-                  }}
-                  onClick={() => setShowSaveCompare(!showSaveCompare)}
-                  >
-                    <div style={{
-                      fontSize: '0.9rem',
-                      fontWeight: '600',
-                      color: '#333',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem'
-                    }}>
-                      💾 검색 결과 저장 및 비교
-                      {savedSearchResults.length > 0 && (
-                        <span style={{
-                          padding: '0.2rem 0.5rem',
-                          backgroundColor: '#28a745',
-                          color: '#fff',
-                          borderRadius: '12px',
-                          fontSize: '0.7rem'
-                        }}>
-                          {savedSearchResults.length}개 저장됨
-                        </span>
-                      )}
-                    </div>
-                    <span style={{ fontSize: '0.8rem', color: '#666' }}>
-                      {showSaveCompare ? '▲' : '▼'}
-                    </span>
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
+                    <button
+                      type="button"
+                      onClick={saveSearchResult}
+                      style={{
+                        padding: '0.5rem 1rem',
+                        backgroundColor: '#28a745',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontSize: '0.85rem',
+                        fontWeight: '500',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = '#218838';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = '#28a745';
+                      }}
+                    >
+                      현재 결과 저장
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowComparison(!showComparison)}
+                      disabled={savedSearchResults.length < 2}
+                      style={{
+                        padding: '0.5rem 1rem',
+                        backgroundColor: savedSearchResults.length < 2 ? '#ccc' : '#17a2b8',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: savedSearchResults.length < 2 ? 'not-allowed' : 'pointer',
+                        fontSize: '0.85rem',
+                        fontWeight: '500',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (savedSearchResults.length >= 2) {
+                          e.currentTarget.style.backgroundColor = '#138496';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (savedSearchResults.length >= 2) {
+                          e.currentTarget.style.backgroundColor = '#17a2b8';
+                        }
+                      }}
+                    >
+                      {showComparison ? '비교 숨기기' : '결과 비교'}
+                    </button>
                   </div>
-                  {showSaveCompare && (
-                  <div>
-                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
-                      <button
-                        type="button"
-                        onClick={saveSearchResult}
-                        style={{
-                          padding: '0.5rem 1rem',
-                          backgroundColor: '#28a745',
-                          color: '#fff',
-                          border: 'none',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          fontSize: '0.85rem',
-                          fontWeight: '500',
-                          transition: 'all 0.2s'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = '#218838';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = '#28a745';
-                        }}
-                      >
-                        현재 결과 저장
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setShowComparison(!showComparison)}
-                        disabled={savedSearchResults.length < 2}
-                        style={{
-                          padding: '0.5rem 1rem',
-                          backgroundColor: savedSearchResults.length < 2 ? '#ccc' : '#17a2b8',
-                          color: '#fff',
-                          border: 'none',
-                          borderRadius: '6px',
-                          cursor: savedSearchResults.length < 2 ? 'not-allowed' : 'pointer',
-                          fontSize: '0.85rem',
-                          fontWeight: '500',
-                          transition: 'all 0.2s'
-                        }}
-                        onMouseEnter={(e) => {
-                          if (savedSearchResults.length >= 2) {
-                            e.currentTarget.style.backgroundColor = '#138496';
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (savedSearchResults.length >= 2) {
-                            e.currentTarget.style.backgroundColor = '#17a2b8';
-                          }
-                        }}
-                      >
-                        {showComparison ? '비교 숨기기' : '결과 비교'}
-                      </button>
-                    </div>
 
-                    {/* 저장된 검색 결과 목록 */}
-                    {savedSearchResults.length > 0 && (
+                  {/* 저장된 검색 결과 목록 */}
+                  {savedSearchResults.length > 0 && (
                     <div style={{
                       marginTop: '0.75rem',
                       padding: '0.75rem',
@@ -3153,50 +3397,25 @@ export default function NewsScraper() {
                       </div>
                     );
                   })()}
-                  </div>
-                  )}
                 </div>
+              )}
 
-                {/* 트렌드 분석 */}
-                {(() => {
-                  const trendData = generateTrendData();
-                  if (!trendData) return null;
+              {/* 트렌드 분석 섹션 */}
+              {showTrend && (() => {
+                const trendData = generateTrendData();
+                if (!trendData) return null;
 
-                  return (
-                    <div style={{
-                      marginBottom: '1.5rem',
-                      padding: '1rem',
-                      backgroundColor: '#fff',
-                      borderRadius: '6px',
-                      border: '1px solid #e0e0e0'
-                    }}>
-                      <div style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        marginBottom: showTrend ? '1rem' : '0',
-                        cursor: 'pointer'
-                      }}
-                      onClick={() => setShowTrend(!showTrend)}
-                      >
-                        <div style={{
-                          fontSize: '0.9rem',
-                          fontWeight: '600',
-                          color: '#333',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.5rem'
-                        }}>
-                          📈 트렌드 분석
-                        </div>
-                        <span style={{ fontSize: '0.8rem', color: '#666' }}>
-                          {showTrend ? '▲' : '▼'}
-                        </span>
-                      </div>
-                      {showTrend && (
-                        <div>
-                          {/* 날짜별 분포 */}
-                          {trendData.dateDistribution.length > 0 && (
+                return (
+                  <div style={{
+                    marginTop: '1rem',
+                    padding: '1rem',
+                    backgroundColor: '#fff',
+                    borderRadius: '6px',
+                    border: '1px solid #e0e0e0'
+                  }}>
+                    <div>
+                      {/* 날짜별 분포 */}
+                      {trendData.dateDistribution.length > 0 && (
                         <div style={{ marginBottom: '1.5rem' }}>
                           <div style={{
                             fontSize: '0.95rem',
@@ -3335,214 +3554,241 @@ export default function NewsScraper() {
                           </div>
                         </div>
                       )}
-                        </div>
-                      )}
                     </div>
-                  );
-                })()}
+                  </div>
+                );
+              })()}
 
-                {/* 검색 결과 요약 */}
-                {summary && (
+              {/* 검색 결과 요약 섹션 */}
+              {showSummary && newsSearchResult && (() => {
+                const summary = generateSearchSummary();
+                if (!summary) return null;
+                
+                return (
                   <div style={{
-                    marginBottom: '1.5rem',
+                    marginTop: '1rem',
                     padding: '1rem',
                     backgroundColor: '#fff',
                     borderRadius: '6px',
                     border: '1px solid #e0e0e0'
                   }}>
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      marginBottom: showSummary ? '1rem' : '0',
-                      cursor: 'pointer'
-                    }}
-                    onClick={() => setShowSummary(!showSummary)}
-                    >
+                    <div>
+                      {/* 기본 통계 */}
                       <div style={{
-                        fontSize: '0.9rem',
-                        fontWeight: '600',
-                        color: '#333',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem'
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                        gap: '1rem',
+                        marginBottom: '1.5rem'
                       }}>
-                        📊 검색 결과 요약
-                      </div>
-                      <span style={{ fontSize: '0.8rem', color: '#666' }}>
-                        {showSummary ? '▲' : '▼'}
-                      </span>
-                    </div>
-                    {showSummary && (
-                      <div>
-
-                    {/* 기본 통계 */}
-                    <div style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                      gap: '1rem',
-                      marginBottom: '1.5rem'
-                    }}>
-                      <div style={{
-                        padding: '1rem',
-                        backgroundColor: '#f8f9fa',
-                        borderRadius: '6px',
-                        border: '1px solid #e0e0e0'
-                      }}>
-                        <div style={{ fontSize: '0.85rem', color: '#666', marginBottom: '0.25rem' }}>
-                          표시된 기사 수
-                        </div>
-                        <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#007bff' }}>
-                          {summary.totalArticles.toLocaleString()}개
-                        </div>
-                      </div>
-                      <div style={{
-                        padding: '1rem',
-                        backgroundColor: '#f8f9fa',
-                        borderRadius: '6px',
-                        border: '1px solid #e0e0e0'
-                      }}>
-                        <div style={{ fontSize: '0.85rem', color: '#666', marginBottom: '0.25rem' }}>
-                          기사 기간
-                        </div>
-                        <div style={{ fontSize: '1rem', fontWeight: '600', color: '#333' }}>
-                          {summary.dateRange}
-                        </div>
-                      </div>
-                      <div style={{
-                        padding: '1rem',
-                        backgroundColor: '#f8f9fa',
-                        borderRadius: '6px',
-                        border: '1px solid #e0e0e0'
-                      }}>
-                        <div style={{ fontSize: '0.85rem', color: '#666', marginBottom: '0.25rem' }}>
-                          평균 설명 길이
-                        </div>
-                        <div style={{ fontSize: '1rem', fontWeight: '600', color: '#333' }}>
-                          {summary.avgDescriptionLength}자
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* 주요 키워드 */}
-                    {summary.topKeywords.length > 0 && (
-                      <div style={{ marginBottom: '1.5rem' }}>
                         <div style={{
-                          fontSize: '0.95rem',
-                          fontWeight: '600',
-                          color: '#333',
-                          marginBottom: '0.75rem'
+                          padding: '1rem',
+                          backgroundColor: '#f8f9fa',
+                          borderRadius: '6px',
+                          border: '1px solid #e0e0e0'
                         }}>
-                          🔑 주요 키워드
+                          <div style={{ fontSize: '0.85rem', color: '#666', marginBottom: '0.25rem' }}>
+                            표시된 기사 수
+                          </div>
+                          <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#007bff' }}>
+                            {summary.totalArticles.toLocaleString()}개
+                          </div>
                         </div>
                         <div style={{
-                          display: 'flex',
-                          flexWrap: 'wrap',
-                          gap: '0.5rem'
+                          padding: '1rem',
+                          backgroundColor: '#f8f9fa',
+                          borderRadius: '6px',
+                          border: '1px solid #e0e0e0'
                         }}>
-                          {summary.topKeywords.map((keyword, index) => {
-                            const maxCount = summary.topKeywords[0].count;
-                            const fontSize = 0.85 + (keyword.count / maxCount) * 0.3; // 빈도에 따라 크기 조정
-                            const opacity = 0.6 + (keyword.count / maxCount) * 0.4; // 빈도에 따라 투명도 조정
-                            
-                            return (
+                          <div style={{ fontSize: '0.85rem', color: '#666', marginBottom: '0.25rem' }}>
+                            기사 기간
+                          </div>
+                          <div style={{ fontSize: '1rem', fontWeight: '600', color: '#333' }}>
+                            {summary.dateRange}
+                          </div>
+                        </div>
+                        <div style={{
+                          padding: '1rem',
+                          backgroundColor: '#f8f9fa',
+                          borderRadius: '6px',
+                          border: '1px solid #e0e0e0'
+                        }}>
+                          <div style={{ fontSize: '0.85rem', color: '#666', marginBottom: '0.25rem' }}>
+                            평균 설명 길이
+                          </div>
+                          <div style={{ fontSize: '1rem', fontWeight: '600', color: '#333' }}>
+                            {summary.avgDescriptionLength}자
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 주요 키워드 */}
+                      {summary.topKeywords.length > 0 && (
+                        <div style={{ marginBottom: '1.5rem' }}>
+                          <div style={{
+                            fontSize: '0.95rem',
+                            fontWeight: '600',
+                            color: '#333',
+                            marginBottom: '0.75rem'
+                          }}>
+                            🔑 주요 키워드
+                          </div>
+                          <div style={{
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            gap: '0.5rem'
+                          }}>
+                            {summary.topKeywords.map((keyword: { word: string; count: number }, index: number) => {
+                              const maxCount = summary.topKeywords[0].count;
+                              const fontSize = 0.85 + (keyword.count / maxCount) * 0.3;
+                              const opacity = 0.6 + (keyword.count / maxCount) * 0.4;
+                              
+                              return (
+                                <span
+                                  key={index}
+                                  style={{
+                                    display: 'inline-block',
+                                    padding: '0.5rem 0.75rem',
+                                    backgroundColor: `rgba(0, 123, 255, ${opacity})`,
+                                    color: '#fff',
+                                    borderRadius: '20px',
+                                    fontSize: `${fontSize}rem`,
+                                    fontWeight: '500',
+                                    cursor: 'default'
+                                  }}
+                                  title={`${keyword.word}: ${keyword.count}회 등장`}
+                                >
+                                  {keyword.word} ({keyword.count})
+                                </span>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 주요 언론사 */}
+                      {summary.topDomains.length > 0 && (
+                        <div style={{ marginBottom: '1.5rem' }}>
+                          <div style={{
+                            fontSize: '0.95rem',
+                            fontWeight: '600',
+                            color: '#333',
+                            marginBottom: '0.75rem'
+                          }}>
+                            📰 주요 언론사
+                          </div>
+                          <div style={{
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            gap: '0.5rem'
+                          }}>
+                            {summary.topDomains.map((domain: { domain: string; count: number }, index: number) => (
                               <span
                                 key={index}
                                 style={{
                                   display: 'inline-block',
-                                  padding: '0.5rem 0.75rem',
-                                  backgroundColor: `rgba(0, 123, 255, ${opacity})`,
-                                  color: '#fff',
-                                  borderRadius: '20px',
-                                  fontSize: `${fontSize}rem`,
-                                  fontWeight: '500',
-                                  cursor: 'default'
+                                  padding: '0.4rem 0.75rem',
+                                  backgroundColor: '#e6f2ff',
+                                  color: '#0066cc',
+                                  borderRadius: '4px',
+                                  fontSize: '0.85rem',
+                                  border: '1px solid #b3d9ff'
                                 }}
-                                title={`${keyword.word}: ${keyword.count}회 등장`}
                               >
-                                {keyword.word} ({keyword.count})
+                                {domain.domain} ({domain.count}개)
                               </span>
-                            );
-                          })}
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
 
-                    {/* 주요 언론사 */}
-                    {summary.topDomains.length > 0 && (
-                      <div style={{ marginBottom: '1.5rem' }}>
-                        <div style={{
-                          fontSize: '0.95rem',
-                          fontWeight: '600',
-                          color: '#333',
-                          marginBottom: '0.75rem'
-                        }}>
-                          📰 주요 언론사
+                      {/* 제목 패턴 */}
+                      {summary.commonTitleWords.length > 0 && (
+                        <div>
+                          <div style={{
+                            fontSize: '0.95rem',
+                            fontWeight: '600',
+                            color: '#333',
+                            marginBottom: '0.75rem'
+                          }}>
+                            📝 제목에서 자주 등장하는 단어
+                          </div>
+                          <div style={{
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            gap: '0.5rem'
+                          }}>
+                            {summary.commonTitleWords.map((word: string, index: number) => (
+                              <span
+                                key={index}
+                                style={{
+                                  display: 'inline-block',
+                                  padding: '0.4rem 0.75rem',
+                                  backgroundColor: '#fff3cd',
+                                  color: '#856404',
+                                  borderRadius: '4px',
+                                  fontSize: '0.85rem',
+                                  border: '1px solid #ffc107'
+                                }}
+                              >
+                                {word}
+                              </span>
+                            ))}
+                          </div>
                         </div>
-                        <div style={{
-                          display: 'flex',
-                          flexWrap: 'wrap',
-                          gap: '0.5rem'
-                        }}>
-                          {summary.topDomains.map((domain, index) => (
-                            <span
-                              key={index}
-                              style={{
-                                display: 'inline-block',
-                                padding: '0.4rem 0.75rem',
-                                backgroundColor: '#e6f2ff',
-                                color: '#0066cc',
-                                borderRadius: '4px',
-                                fontSize: '0.85rem',
-                                border: '1px solid #b3d9ff'
-                              }}
-                            >
-                              {domain.domain} ({domain.count}개)
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* 제목 패턴 */}
-                    {summary.commonTitleWords.length > 0 && (
-                      <div>
-                        <div style={{
-                          fontSize: '0.95rem',
-                          fontWeight: '600',
-                          color: '#333',
-                          marginBottom: '0.75rem'
-                        }}>
-                          📝 제목에서 자주 등장하는 단어
-                        </div>
-                        <div style={{
-                          display: 'flex',
-                          flexWrap: 'wrap',
-                          gap: '0.5rem'
-                        }}>
-                          {summary.commonTitleWords.map((word, index) => (
-                            <span
-                              key={index}
-                              style={{
-                                display: 'inline-block',
-                                padding: '0.4rem 0.75rem',
-                                backgroundColor: '#fff3cd',
-                                color: '#856404',
-                                borderRadius: '4px',
-                                fontSize: '0.85rem',
-                                border: '1px solid #ffc107'
-                              }}
-                            >
-                              {word}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
-                )}
+                );
+              })()}
+            </div>
+          )}
+
+          {newsSearchError && (
+            <div style={{
+              padding: '1rem',
+              backgroundColor: '#fff3cd',
+              border: '1px solid #ffc107',
+              borderRadius: '6px',
+              color: '#856404',
+              marginBottom: '1rem'
+            }}>
+              ⚠️ {newsSearchError}
+            </div>
+          )}
+
+          {newsSearchResult && (() => {
+            const filteredResult = getFilteredNewsResults();
+            const displayResult = filteredResult || newsSearchResult;
+            const isFiltered = useDateRange && (dateRangeStart || dateRangeEnd);
+            
+            return (
+              <div>
+                <div style={{ 
+                  marginBottom: '1rem', 
+                  color: '#666',
+                  fontSize: '0.9rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.25rem'
+                }}>
+                  <div>
+                    총 {newsSearchResult.total.toLocaleString()}개의 검색 결과 중 {newsSearchResult.start}~{Math.min(newsSearchResult.start + newsSearchResult.display - 1, newsSearchResult.total)}번째 결과
+                  </div>
+                  {isFiltered && filteredResult && (
+                    <div style={{
+                      padding: '0.5rem',
+                      backgroundColor: '#e6f2ff',
+                      borderRadius: '4px',
+                      color: '#0066cc',
+                      fontSize: '0.85rem'
+                    }}>
+                      📅 날짜 범위 필터 적용: {displayResult.items.length}개 결과 표시
+                      {dateRangeStart && dateRangeEnd && (
+                        <span> ({dateRangeStart} ~ {dateRangeEnd})</span>
+                      )}
+                    </div>
+                  )}
+                </div>
 
                 {/* 검색 결과 내보내기 버튼 */}
                 <div style={{
@@ -3586,7 +3832,7 @@ export default function NewsScraper() {
                         e.currentTarget.style.backgroundColor = '#6c757d';
                       }}
                     >
-                      📋 클립보드 복사
+                      클립보드
                     </button>
                     <button
                       type="button"
@@ -3609,7 +3855,7 @@ export default function NewsScraper() {
                         e.currentTarget.style.backgroundColor = '#28a745';
                       }}
                     >
-                      📄 CSV 다운로드
+                      CSV
                     </button>
                     <button
                       type="button"
@@ -3632,7 +3878,7 @@ export default function NewsScraper() {
                         e.currentTarget.style.backgroundColor = '#17a2b8';
                       }}
                     >
-                      📦 JSON 다운로드
+                      JSON
                     </button>
                     <button
                       type="button"
@@ -3655,7 +3901,7 @@ export default function NewsScraper() {
                         e.currentTarget.style.backgroundColor = '#6c757d';
                       }}
                     >
-                      📄 TXT 다운로드
+                      TXT
                     </button>
                   </div>
                 </div>
@@ -4467,7 +4713,7 @@ export default function NewsScraper() {
                   e.currentTarget.style.backgroundColor = '#f0f0f0';
                 }}
               >
-                📋 클립보드 복사
+                클립보드
               </button>
               <button
                 type="button"
@@ -4490,7 +4736,7 @@ export default function NewsScraper() {
                   e.currentTarget.style.backgroundColor = '#28a745';
                 }}
               >
-                📊 CSV 다운로드
+                CSV
               </button>
               <button
                 type="button"
@@ -4513,7 +4759,7 @@ export default function NewsScraper() {
                   e.currentTarget.style.backgroundColor = '#0066cc';
                 }}
               >
-                📄 JSON 다운로드
+                JSON
               </button>
               <button
                 type="button"
@@ -4536,7 +4782,7 @@ export default function NewsScraper() {
                   e.currentTarget.style.backgroundColor = '#6c757d';
                 }}
               >
-                📄 TXT 다운로드
+                TXT
               </button>
               {wordCloudData.length > 0 && (
                 <button
