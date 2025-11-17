@@ -667,21 +667,171 @@ export default function NewsScraper() {
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem' }}>
       <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ 
-          fontSize: '2.5rem', 
-          fontWeight: 'bold', 
-          marginBottom: '0.5rem', 
-          color: '#1a1a1a',
-          lineHeight: '1.4',
-          display: 'inline-block'
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '1rem',
+          marginBottom: '0.5rem'
         }}>
-          <span style={{ fontSize: '2.5rem', fontWeight: 'bold' }}>신</span>
-          <span style={{ fontSize: '1.2rem', fontWeight: 'normal', color: '#666' }}>문 </span>
-          <span style={{ fontSize: '2.5rem', fontWeight: 'bold' }}>기</span>
-          <span style={{ fontSize: '1.2rem', fontWeight: 'normal', color: '#666' }}>사 </span>
-          <span style={{ fontSize: '2.5rem', fontWeight: 'bold' }}>한</span>
-          <span style={{ fontSize: '1.2rem', fontWeight: 'normal', color: '#666' }}>눈에 보기</span>
-        </h1>
+          {/* 로고 - 이미지 파일 또는 SVG */}
+          <div style={{ position: 'relative', width: '48px', height: '48px', flexShrink: 0 }}>
+            {/* 이미지 파일이 있으면 사용, 없으면 SVG 폴백 */}
+            <img 
+              src="/logo.png" 
+              alt="신기한 앱 로고"
+              style={{ 
+                width: '100%', 
+                height: '100%', 
+                objectFit: 'contain',
+                display: 'block'
+              }}
+              onError={(e) => {
+                // 이미지 로드 실패 시 SVG 표시
+                const target = e.currentTarget;
+                target.style.display = 'none';
+                const svg = target.nextElementSibling as HTMLElement;
+                if (svg) svg.style.display = 'block';
+              }}
+            />
+            {/* SVG 폴백 (이미지 설명 기반 재현) */}
+            <svg 
+              width="48" 
+              height="48" 
+              viewBox="0 0 48 48" 
+              style={{ 
+                display: 'none',
+                position: 'absolute',
+                top: 0,
+                left: 0
+              }}
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <defs>
+                {/* 그라데이션 정의 (녹색에서 청록색으로) */}
+                <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#4ade80" />
+                  <stop offset="50%" stopColor="#22d3ee" />
+                  <stop offset="100%" stopColor="#06b6d4" />
+                </linearGradient>
+              </defs>
+              
+              {/* 신문/문서 배경 (약간 접힌 형태) */}
+              <path 
+                d="M 8 6 L 36 6 Q 40 6 40 10 L 40 38 Q 40 42 36 42 L 8 42 Q 4 42 4 38 L 4 10 Q 4 6 8 6 Z" 
+                fill="none" 
+                stroke="url(#logoGradient)" 
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              
+              {/* 텍스트 라인들 (헤드라인) */}
+              <line 
+                x1="8" 
+                y1="12" 
+                x2="38" 
+                y2="12" 
+                stroke="url(#logoGradient)" 
+                strokeWidth="2" 
+                strokeLinecap="round"
+              />
+              
+              {/* 텍스트 라인들 (본문) */}
+              <line 
+                x1="8" 
+                y1="20" 
+                x2="32" 
+                y2="20" 
+                stroke="url(#logoGradient)" 
+                strokeWidth="1.5" 
+                strokeLinecap="round"
+              />
+              <line 
+                x1="8" 
+                y1="26" 
+                x2="30" 
+                y2="26" 
+                stroke="url(#logoGradient)" 
+                strokeWidth="1.5" 
+                strokeLinecap="round"
+              />
+              
+              {/* 눈 아이콘 (중앙에 위치) */}
+              <g transform="translate(24, 24)">
+                {/* 눈 외곽선 */}
+                <ellipse 
+                  cx="0" 
+                  cy="0" 
+                  rx="10" 
+                  ry="6" 
+                  fill="none" 
+                  stroke="url(#logoGradient)" 
+                  strokeWidth="2"
+                />
+                {/* 홍채 */}
+                <circle 
+                  cx="0" 
+                  cy="0" 
+                  r="5" 
+                  fill="none" 
+                  stroke="url(#logoGradient)" 
+                  strokeWidth="1.5"
+                />
+                {/* 동공 */}
+                <circle 
+                  cx="0" 
+                  cy="0" 
+                  r="3" 
+                  fill="url(#logoGradient)"
+                />
+                {/* 하이라이트 */}
+                <circle 
+                  cx="-1" 
+                  cy="-1" 
+                  r="1" 
+                  fill="#ffffff"
+                  opacity="0.9"
+                />
+              </g>
+              
+              {/* 아래쪽 텍스트 라인들 (눈 아래) */}
+              <line 
+                x1="8" 
+                y1="34" 
+                x2="28" 
+                y2="34" 
+                stroke="url(#logoGradient)" 
+                strokeWidth="1.5" 
+                strokeLinecap="round"
+              />
+              <line 
+                x1="8" 
+                y1="38" 
+                x2="26" 
+                y2="38" 
+                stroke="url(#logoGradient)" 
+                strokeWidth="1.5" 
+                strokeLinecap="round"
+              />
+            </svg>
+          </div>
+          
+          <h1 style={{ 
+            fontSize: '2.5rem', 
+            fontWeight: 'bold', 
+            margin: 0,
+            color: '#1a1a1a',
+            lineHeight: '1.4',
+            display: 'inline-block'
+          }}>
+            <span style={{ fontSize: '2.5rem', fontWeight: 'bold' }}>신</span>
+            <span style={{ fontSize: '1.2rem', fontWeight: 'normal', color: '#666' }}>문 </span>
+            <span style={{ fontSize: '2.5rem', fontWeight: 'bold' }}>기</span>
+            <span style={{ fontSize: '1.2rem', fontWeight: 'normal', color: '#666' }}>사 </span>
+            <span style={{ fontSize: '2.5rem', fontWeight: 'bold' }}>한</span>
+            <span style={{ fontSize: '1.2rem', fontWeight: 'normal', color: '#666' }}>눈에 보기</span>
+          </h1>
+        </div>
         <p style={{ color: '#666', fontSize: '0.95rem', lineHeight: '1.6', marginTop: '0.5rem' }}>
           여러 언론사의 신문 기사를 면별로 모아보고, 키워드 분석과 트렌드를 한눈에 파악하세요
         </p>
