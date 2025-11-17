@@ -712,7 +712,7 @@ export default function NewsScraper() {
               marginBottom: '-2px'
             }}
           >
-            📰 신문 기사 추출
+            📰 신문 수집
           </button>
           <button
             type="button"
@@ -730,12 +730,12 @@ export default function NewsScraper() {
               marginBottom: '-2px'
             }}
           >
-            🔍 네이버 뉴스 검색
+            🔍 뉴스 키워드 검색
           </button>
         </div>
       </div>
 
-      {/* 신문 기사 추출 탭 */}
+      {/* 신문 수집 탭 */}
       {activeTab === 'scrape' && (
         <form onSubmit={handleSubmit} style={{ marginBottom: '2rem' }}>
         {/* 언론사 선택 영역 */}
@@ -1148,7 +1148,7 @@ export default function NewsScraper() {
       </form>
       )}
 
-      {/* 네이버 뉴스 검색 탭 */}
+      {/* 뉴스 키워드 검색 탭 */}
       {activeTab === 'search' && (
         <div style={{ 
           padding: '1.5rem', 
@@ -1162,7 +1162,7 @@ export default function NewsScraper() {
             color: '#333',
             marginBottom: '1.5rem'
           }}>
-            🔍 네이버 뉴스 키워드 검색
+            🔍 뉴스 키워드 검색
           </h2>
 
           <form onSubmit={handleNewsSearchSubmit} style={{ marginBottom: '1rem' }}>
